@@ -17,7 +17,10 @@ import xml.etree.ElementTree as ET
 from pygcj.pygcj import GCJProj
 
 ns = "http://www.topografix.com/GPX/1/1"
-pattern = f".//{{{ns}}}trk/{{{ns}}}trkseg/{{{ns}}}trkpt"
+patterns = [
+    f".//{{{ns}}}trk/{{{ns}}}trkseg/{{{ns}}}trkpt",
+    f".//{{{ns}}}wpt",
+]
 
 def gpx_to_gcj02(gpx_file_path, output_file_path):
     """
@@ -39,18 +42,21 @@ def gpx_to_gcj02(gpx_file_path, output_file_path):
     trans = GCJProj()
 
     # Iterate through all the lat/lon coordinates in the GPX file
-    for trkpt in tree.findall(pattern):
-        print(trkpt)
+    items = list()
+    for pattern in patterns:
+        items.extend(tree.findall(pattern))
+
+    for item in items:
         # Extract the lat/lon values
-        lat = float(trkpt.attrib["lat"])
-        lon = float(trkpt.attrib["lon"])
+        lat = float(item.attrib["lat"])
+        lon = float(item.attrib["lon"])
 
         # Convert the coordinates to GCJ-02 system
         gcj02_lat, gcj02_lon = trans.wgs_to_gcj(lat, lon)
 
         # Update the trkpt element with the new coordinates
-        trkpt.attrib["lat"] = str(gcj02_lat)
-        trkpt.attrib["lon"] = str(gcj02_lon)
+        item.attrib["lat"] = str(gcj02_lat)
+        item.attrib["lon"] = str(gcj02_lon)
 
     # Save the modified GPX tree to a new file
     tree.write(output_file_path, encoding="utf-8", xml_declaration=True)
